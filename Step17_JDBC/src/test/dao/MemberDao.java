@@ -2,6 +2,9 @@ package test.dao;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import test.dto.MemberDto;
 import test.util.DBConnect;
@@ -12,6 +15,96 @@ import test.util.DBConnect;
  *  - DB에 insert, update, delete, select 작업을 대신해주는 객체를 생성할 클래스 설계하기
  */
 public class MemberDao {
+	//인자로 전달되는 번호에 해당하는 회원 한명의 정보를 리턴하는 메소드
+	public MemberDto getData(int num) {
+		//MemberDto 객체의 참조값을 담을 변수 미리 선언
+		MemberDto dto = null;
+		
+		//필요한 객체를 담을 지역변수 미리 생성
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			//Connection 객체의 참조값 얻어오기
+			conn = new DBConnect().getConn();
+			//실행할 sql문(select문)
+			String sql = "SELECT name, addr"
+					+ " FROM member"
+					+ " WHERE num = ?";
+			pstmt = conn.prepareStatement(sql);
+			//select문이 미완성이라면 여기서 완성
+			pstmt.setInt(1, num);
+			//select문 수행하고 결과를 ResultSet으로 리턴
+			rs = pstmt.executeQuery();
+			//반복문 돌면서 ResultSet에 있는 row에 있는 정보를 추출
+			while (rs.next()) {
+				//현재 커서가 존재하는 row에 있는 정보를 추출해서
+				//MemberDto 객체에 회원 한 명의 정보를 담음
+				dto = new MemberDto();
+				dto.setNum(num);
+				dto.setName(rs.getString("name"));
+				dto.setAddr(rs.getString("addr"));
+				}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (rs != null) {rs.close();}
+				if (pstmt != null) {pstmt.close();}
+				if (conn != null) {conn.close();}
+			} catch (Exception e) {
+			}
+		}
+		
+		return dto;
+	}
+	
+	//전체 회원의 정보를 리턴하는 메소드
+	public List<MemberDto> getList(){
+		//회원 정보를 누적할 객체 생성
+		List<MemberDto> list = new ArrayList<>();
+		
+		//필요한 객체를 담을 지역변수 미리 생성
+		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		try {
+			//Connection 객체의 참조값 얻어오기
+			conn = new DBConnect().getConn();
+			//실행할 sql문(select문)
+			String sql = "SELECT num, name, addr"
+					+ " FROM member"
+					+ " ORDER BY num DESC";
+			pstmt = conn.prepareStatement(sql);
+			//select문이 미완성이라면 여기서 완성
+			
+			//select문 수행하고 결과를 ResultSet으로 리턴
+			rs = pstmt.executeQuery();
+			//반복문 돌면서 ResultSet에 있는 row에 있는 정보를 추출
+			while(rs.next()) {
+				//현재 커서가 존재하는 row에 있는 정보를 추출해서 사용
+				
+				//row에 있는 회원정보를 MemberDto 객체에 담기
+				MemberDto dto = new MemberDto();
+				dto.setNum(rs.getInt("num"));
+				dto.setName(rs.getString("name"));
+				dto.setAddr(rs.getString("addr"));
+				
+				//List에 누적
+				list.add(dto);
+			}
+		}catch(Exception e) {
+			e.printStackTrace();
+		}finally {
+			try {
+				if(rs != null) {rs.close();}
+				if(pstmt != null) {pstmt.close();}
+				if(conn != null) {conn.close();}
+			}catch(Exception e) {}
+		}
+		//회원 정보가 누적된 List 객체의 참조값 리턴
+		return list;
+	}
 	//회원 한 명의 정보를 저장하고 해당 작업의 성공 여부를 리턴해주는 메소드
 	public boolean insert(MemberDto dto) {
 		//필요한 객체를 담을 지역변수 미리 선언
@@ -105,7 +198,6 @@ public class MemberDao {
 			//sql문을 대신 실행해줄 PreparedStatement 객체의 참조값 얻어오기
 			pstmt = conn.prepareStatement(sql);
 			//sql문이 ?가 존재하는 미완성이라면 여기서 완성
-			pstmt = conn.prepareStatement(sql);
 			pstmt.setInt(1, num);
 			//insert or update or delete문을 실제 수행하고 변호된 row의 개수 리턴
 			rowCount = pstmt.executeUpdate();	//수행하고 리턴되는 값을 변수에 담는다
@@ -125,4 +217,5 @@ public class MemberDao {
 			return false;
 		}
 	}
+	
 }
